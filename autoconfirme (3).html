@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>AutoConfirme</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0E1420; --panel:#161E2E; --panel-2:#1C2536; --line:#28324A;
+    --text:#EAEEF6; --muted:#8C97AF;
+    --green:#22C55E; --green-d:#16A34A;
+    --red:#EF4444; --red-d:#DC2626;
+    --grey:#64748B; --grey-d:#4B5768;
+    --amber:#F5A524;
+    box-sizing:border-box;
+    padding-top:env(safe-area-inset-top,0px);
+    padding-bottom:env(safe-area-inset-bottom,0px);
+  }
+  :root:not([data-theme="light"]){ }
+  @media (prefers-color-scheme: light){
+    :root:not([data-theme="dark"]){
+      --bg:#F3F5F9; --panel:#FFFFFF; --panel-2:#F7F8FB; --line:#E3E7EF;
+      --text:#141A26; --muted:#6B7386;
+    }
+  }
+  :root[data-theme="light"]{
+    --bg:#F3F5F9; --panel:#FFFFFF; --panel-2:#F7F8FB; --line:#E3E7EF;
+    --text:#141A26; --muted:#6B7386;
+  }
+  html{scroll-padding-top:env(safe-area-inset-top,0px);}
+  *{box-sizing:border-box;}
+  body{
+    margin:0; background:var(--bg); color:var(--text);
+    font-family:'Tajawal',system-ui,'Segoe UI',Tahoma,sans-serif;
+    min-height:100%;
+    display:flex; justify-content:center;
+    padding:28px 16px 48px;
+  }
+  .app{ width:100%; max-width:460px; }
+
+  .brand{ display:flex; align-items:center; gap:10px; margin-bottom:18px; }
+  .brand-mark{
+    width:38px; height:38px; border-radius:11px;
+    background:linear-gradient(155deg,var(--green),var(--green-d));
+    display:flex; align-items:center; justify-content:center; flex-shrink:0;
+  }
+  .brand-mark svg{width:19px;height:19px;fill:#fff;}
+  .brand h1{ font-size:19px; font-weight:900; margin:0; letter-spacing:.2px; }
+  .brand p{ font-size:12.5px; color:var(--muted); margin:1px 0 0; font-weight:500; }
+
+  .card{
+    background:var(--panel); border:1px solid var(--line);
+    border-radius:18px; padding:20px; margin-bottom:14px;
+  }
+
+  /* call status card */
+  .status-row{ display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; }
+  .status-pill{
+    font-size:12px; font-weight:700; padding:5px 12px; border-radius:20px;
+    background:var(--panel-2); color:var(--muted); border:1px solid var(--line);
+  }
+  .status-pill.ringing{ color:var(--amber); border-color:rgba(245,165,36,.4); }
+  .status-pill.active{ color:var(--green); border-color:rgba(34,197,94,.4); }
+  .status-pill.hold{ color:var(--grey); border-color:rgba(100,116,139,.5); }
+  .timer{ font-size:13px; color:var(--muted); font-variant-numeric:tabular-nums; font-weight:700; }
+
+  .caller{ text-align:center; padding:10px 0 20px; }
+  .caller-avatar{
+    width:64px; height:64px; margin:0 auto 12px; border-radius:50%;
+    background:var(--panel-2); border:1px solid var(--line);
+    display:flex; align-items:center; justify-content:center;
+  }
+  .caller-avatar svg{ width:26px; height:26px; fill:var(--muted); }
+  .caller-num{ font-size:22px; font-weight:900; letter-spacing:.5px; font-variant-numeric:tabular-nums; }
+  .caller-sub{ font-size:12.5px; color:var(--muted); margin-top:3px; font-weight:500; }
+
+  .controls{ display:flex; justify-content:center; gap:22px; padding:4px 0 8px; }
+  .ctrl{ display:flex; flex-direction:column; align-items:center; gap:8px; }
+  .ctrl button{
+    width:60px; height:60px; border-radius:50%; border:none; cursor:pointer;
+    display:flex; align-items:center; justify-content:center;
+    transition:transform .12s ease, box-shadow .12s ease, opacity .12s ease;
+  }
+  .ctrl button:active{ transform:scale(.92); }
+  .ctrl button:disabled{ opacity:.35; cursor:not-allowed; }
+  .ctrl button:disabled:active{ transform:none; }
+  .ctrl button svg{ width:24px; height:24px; fill:#fff; }
+  .ctrl span{ font-size:11.5px; color:var(--muted); font-weight:700; }
+  .btn-answer{ background:linear-gradient(155deg,var(--green),var(--green-d)); box-shadow:0 6px 16px -4px rgba(34,197,94,.55); }
+  .btn-end{ background:linear-gradient(155deg,var(--red),var(--red-d)); box-shadow:0 6px 16px -4px rgba(239,68,68,.55); }
+  .btn-hold{ background:linear-gradient(155deg,var(--grey),var(--grey-d)); box-shadow:0 6px 16px -4px rgba(100,116,139,.45); }
+  .btn-hold.on{ background:linear-gradient(155deg,var(--amber),#c9880f); box-shadow:0 6px 16px -4px rgba(245,165,36,.5); }
+
+  /* dial / simulate row */
+  .sim-row{ display:flex; gap:8px; margin-top:16px; }
+  .sim-row input{
+    flex:1; min-width:0; background:var(--panel-2); border:1px solid var(--line);
+    color:var(--text); border-radius:12px; padding:11px 13px; font-size:14px;
+    font-family:inherit; font-variant-numeric:tabular-nums;
+  }
+  .sim-row input:focus{ outline:2px solid var(--green); outline-offset:1px; }
+  .sim-row button{
+    background:var(--panel-2); border:1px solid var(--line); color:var(--text);
+    border-radius:12px; padding:0 16px; font-size:13px; font-weight:700; cursor:pointer;
+    font-family:inherit; white-space:nowrap;
+  }
+  .sim-row button:hover{ border-color:var(--green); color:var(--green); }
+  .ghost-btn{
+    width:100%; margin-top:9px; background:transparent; border:1px dashed var(--line);
+    color:var(--muted); border-radius:12px; padding:10px; font-size:13px; font-weight:700;
+    cursor:pointer; font-family:inherit;
+  }
+  .ghost-btn:hover{ border-color:var(--green); color:var(--green); }
+
+  /* log */
+  .log-head{ display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; }
+  .log-head h2{ font-size:14.5px; font-weight:800; margin:0; }
+  .log-head button{
+    background:none; border:none; color:var(--muted); font-size:12px; font-weight:700;
+    cursor:pointer; font-family:inherit; text-decoration:underline; text-underline-offset:2px;
+  }
+  .log-head button:hover{ color:var(--red); }
+  .log-empty{ text-align:center; color:var(--muted); font-size:13px; padding:24px 0; }
+  .log-list{ display:flex; flex-direction:column; gap:2px; max-height:340px; overflow-y:auto; }
+  .log-item{
+    display:flex; align-items:center; gap:11px; padding:10px 4px;
+    border-bottom:1px solid var(--line);
+  }
+  .log-item:last-child{ border-bottom:none; }
+  .log-icon{
+    width:34px; height:34px; border-radius:50%; flex-shrink:0;
+    display:flex; align-items:center; justify-content:center; background:var(--panel-2);
+  }
+  .log-icon svg{ width:15px; height:15px; }
+  .log-icon.in svg{ fill:var(--green); }
+  .log-icon.out svg{ fill:#4C9EEB; }
+  .log-icon.missed svg{ fill:var(--red); }
+  .log-body{ flex:1; min-width:0; }
+  .log-num{ font-size:14px; font-weight:700; font-variant-numeric:tabular-nums; }
+  .log-meta{ font-size:11.5px; color:var(--muted); margin-top:1px; font-weight:500; }
+  .log-right{ font-size:11.5px; color:var(--muted); font-weight:700; text-align:left; font-variant-numeric:tabular-nums; }
+
+  ::-webkit-scrollbar{ width:6px; }
+  ::-webkit-scrollbar-thumb{ background:var(--line); border-radius:3px; }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <div class="brand">
+    <div class="brand-mark">
+      <svg viewBox="0 0 24 24"><path d="M6.6 10.8c1.4 2.8 3.8 5.1 6.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.6.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1C10.6 21 3 13.4 3 4c0-.6.4-1 1-1h3.5c.6 0 1 .4 1 1 0 1.2.2 2.4.6 3.6.1.4 0 .8-.3 1L6.6 10.8z"/></svg>
+    </div>
+    <div>
+      <h1>AutoConfirme</h1>
+      <p>مركز استقبال مكالمات العملاء</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="status-row">
+      <span class="status-pill" id="statusPill">لا توجد مكالمة</span>
+      <span class="timer" id="timer"></span>
+    </div>
+
+    <div class="caller">
+      <div class="caller-avatar">
+        <svg viewBox="0 0 24 24"><path d="M12 12c2.7 0 5-2.3 5-5s-2.3-5-5-5-5 2.3-5 5 2.3 5 5 5zm0 2c-3.3 0-10 1.7-10 5v3h20v-3c0-3.3-6.7-5-10-5z"/></svg>
+      </div>
+      <div class="caller-num" id="callerNum">بانتظار مكالمة</div>
+      <div class="caller-sub" id="callerSub">اضغط «محاكاة اتصال وارد» للتجربة</div>
+    </div>
+
+    <div class="controls">
+      <div class="ctrl">
+        <button class="btn-answer" id="btnAnswer" disabled aria-label="الرد على المكالمة">
+          <svg viewBox="0 0 24 24"><path d="M6.6 10.8c1.4 2.8 3.8 5.1 6.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.6.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1C10.6 21 3 13.4 3 4c0-.6.4-1 1-1h3.5c.6 0 1 .4 1 1 0 1.2.2 2.4.6 3.6.1.4 0 .8-.3 1L6.6 10.8z"/></svg>
+        </button>
+        <span>رد</span>
+      </div>
+      <div class="ctrl">
+        <button class="btn-end" id="btnEnd" disabled aria-label="إنهاء المكالمة">
+          <svg viewBox="0 0 24 24" transform="rotate(135 12 12)"><path d="M6.6 10.8c1.4 2.8 3.8 5.1 6.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.6.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1C10.6 21 3 13.4 3 4c0-.6.4-1 1-1h3.5c.6 0 1 .4 1 1 0 1.2.2 2.4.6 3.6.1.4 0 .8-.3 1L6.6 10.8z"/></svg>
+        </button>
+        <span>إنهاء</span>
+      </div>
+      <div class="ctrl">
+        <button class="btn-hold" id="btnHold" disabled aria-label="تعليق المكالمة">
+          <svg viewBox="0 0 24 24" id="holdIcon"><path d="M8 5h3v14H8zM13 5h3v14h-3z"/></svg>
+        </button>
+        <span id="holdLabel">تعليق</span>
+      </div>
+    </div>
+
+    <div class="sim-row">
+      <input id="dialInput" type="tel" placeholder="اكتب رقمًا لإجراء اتصال صادر" inputmode="numeric">
+      <button id="btnDial">اتصال</button>
+    </div>
+    <button class="ghost-btn" id="btnSimulate">محاكاة اتصال وارد من عميل</button>
+  </div>
+
+  <div class="card">
+    <div class="log-head">
+      <h2>سجلّ المكالمات</h2>
+      <button id="btnClear">مسح السجل</button>
+    </div>
+    <div id="logWrap">
+      <div class="log-empty">لا توجد مكالمات مسجّلة بعد</div>
+    </div>
+  </div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script>
+(function(){
+  // -- إعدادات الاتصال بـ Supabase --
+  const SUPABASE_URL = 'https://viatqaqnttoitoiauogv.supabase.co';
+  const SUPABASE_KEY = 'sb_publishable_6KJDKVZqyl3pFzqt2o1N0w_oY1FkNUX';
+  const sb = (window.supabase && SUPABASE_URL && SUPABASE_KEY)
+    ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY)
+    : null;
+
+  let log = [];
+
+  let call = null; // {number, direction:'in'|'out', state:'ringing'|'active'|'hold', start, held:false}
+  let timerInt = null;
+
+  const el = id => document.getElementById(id);
+  const statusPill = el('statusPill'), timer = el('timer'), callerNum = el('callerNum'),
+        callerSub = el('callerSub'), btnAnswer = el('btnAnswer'), btnEnd = el('btnEnd'),
+        btnHold = el('btnHold'), holdLabel = el('holdLabel'), logWrap = el('logWrap');
+
+  function randomNumber(){
+    const prefixes = ['0550','0551','0555','0660','0661','0770','0771'];
+    const p = prefixes[Math.floor(Math.random()*prefixes.length)];
+    let rest = '';
+    for(let i=0;i<6;i++) rest += Math.floor(Math.random()*10);
+    return p + rest;
+  }
+
+  function fmtTime(ts){
+    const d = new Date(ts);
+    return d.toLocaleTimeString('ar-DZ',{hour:'2-digit',minute:'2-digit'});
+  }
+  function fmtDur(sec){
+    const m = Math.floor(sec/60), s = sec%60;
+    return String(m).padStart(2,'0')+':'+String(s).padStart(2,'0');
+  }
+
+  async function loadLog(){
+    if(!sb) return;
+    logWrap.innerHTML = '<div class="log-empty">جارِ التحميل من قاعدة البيانات…</div>';
+    const { data, error } = await sb
+      .from('calls')
+      .select('phone_number, direction, status, started_at, duration_seconds')
+      .order('started_at', { ascending: false })
+      .limit(50);
+    if(error){
+      logWrap.innerHTML = '<div class="log-empty">تعذّر الاتصال بقاعدة البيانات. تحقق من الرابط والمفتاح، أو من صلاحيات (RLS) الجدول.</div>';
+      console.error(error);
+      return;
+    }
+    log = (data || []).map(row => ({
+      number: row.phone_number,
+      type: row.status === 'missed' ? 'missed' : row.direction,
+      time: new Date(row.started_at).getTime(),
+      duration: row.duration_seconds
+    }));
+    renderLog();
+  }
+
+  async function pushLog(entry){
+    if(!sb) return;
+    const status = entry.type === 'missed' ? 'missed' : 'answered';
+    const direction = entry.type === 'out' ? 'out' : 'in';
+    const { error } = await sb.from('calls').insert({
+      phone_number: entry.number,
+      direction,
+      status,
+      started_at: new Date(entry.time - (entry.duration ? entry.duration*1000 : 0)).toISOString(),
+      ended_at: new Date(entry.time).toISOString(),
+      duration_seconds: entry.duration
+    });
+    if(error) console.error(error);
+    await loadLog();
+  }
+
+  function renderLog(){
+    if(!log.length){
+      logWrap.innerHTML = '<div class="log-empty">لا توجد مكالمات مسجّلة بعد</div>';
+      return;
+    }
+    const iconIn = '<svg viewBox="0 0 24 24"><path d="M4 15v5h5l-5-5zm11-11h5v5l-5-5zM4 9V4h5L4 9zm16 6v5h-5l5-5z"/></svg>';
+    const iconOut = '<svg viewBox="0 0 24 24"><path d="M20 9V4h-5l5 5zM4 15v5h5l-5-5zm0-11v5l5-5H4zm16 11v5h-5l5-5z" transform="rotate(180 12 12)"/></svg>';
+    const iconMissed = '<svg viewBox="0 0 24 24"><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2zm3.5 13.5L12 12l-3.5 3.5L7 14l3.5-3.5L7 7l1.5-1.5L12 9l3.5-3.5L17 7l-3.5 3.5L17 14l-1.5 1.5z"/></svg>';
+    logWrap.innerHTML = '<div class="log-list">' + log.map(item=>{
+      const iconClass = item.type === 'in' ? 'in' : (item.type === 'out' ? 'out' : 'missed');
+      const icon = item.type === 'in' ? iconIn : (item.type === 'out' ? iconOut : iconMissed);
+      const typeLabel = item.type === 'in' ? 'وارد' : (item.type === 'out' ? 'صادر' : 'فائتة');
+      const durLabel = item.duration != null ? fmtDur(item.duration) : '—';
+      return `<div class="log-item">
+        <div class="log-icon ${iconClass}">${icon}</div>
+        <div class="log-body">
+          <div class="log-num">${item.number}</div>
+          <div class="log-meta">${typeLabel} · ${fmtTime(item.time)}</div>
+        </div>
+        <div class="log-right">${durLabel}</div>
+      </div>`;
+    }).join('') + '</div>';
+  }
+
+  function setStatus(text, cls){
+    statusPill.className = 'status-pill' + (cls ? ' '+cls : '');
+    statusPill.textContent = text;
+  }
+
+  function updateUI(){
+    if(!call){
+      setStatus('لا توجد مكالمة');
+      timer.textContent = '';
+      callerNum.textContent = 'بانتظار مكالمة';
+      callerSub.textContent = 'اضغط «محاكاة اتصال وارد» للتجربة';
+      btnAnswer.disabled = true;
+      btnEnd.disabled = true;
+      btnHold.disabled = true;
+      btnHold.classList.remove('on');
+      holdLabel.textContent = 'تعليق';
+      return;
+    }
+    callerNum.textContent = call.number;
+    btnEnd.disabled = false;
+
+    if(call.state === 'ringing'){
+      setStatus(call.direction === 'in' ? 'مكالمة واردة…' : 'جارِ الاتصال…', 'ringing');
+      callerSub.textContent = call.direction === 'in' ? 'عميل يتصل الآن' : 'بانتظار الرد من الطرف الآخر';
+      btnAnswer.disabled = call.direction !== 'in';
+      btnHold.disabled = true;
+    } else if(call.state === 'active'){
+      setStatus('مكالمة نشطة', 'active');
+      callerSub.textContent = call.direction === 'in' ? 'مكالمة واردة' : 'مكالمة صادرة';
+      btnAnswer.disabled = true;
+      btnHold.disabled = false;
+      btnHold.classList.remove('on');
+      holdLabel.textContent = 'تعليق';
+    } else if(call.state === 'hold'){
+      setStatus('قيد التعليق', 'hold');
+      callerSub.textContent = 'المكالمة معلّقة حاليًا';
+      btnAnswer.disabled = true;
+      btnHold.disabled = false;
+      btnHold.classList.add('on');
+      holdLabel.textContent = 'استئناف';
+    }
+  }
+
+  function tick(){
+    if(call && call.state !== 'ringing'){
+      const sec = Math.floor((Date.now() - call.start)/1000);
+      timer.textContent = fmtDur(sec);
+    }
+  }
+
+  function startCall(number, direction){
+    if(call) return;
+    call = { number, direction, state: 'ringing', start: Date.now() };
+    updateUI();
+    timerInt = setInterval(tick, 1000);
+    if(direction === 'out'){
+      // outgoing calls connect automatically after a short ring
+      setTimeout(()=>{
+        if(call && call.state === 'ringing'){
+          call.state = 'active';
+          call.start = Date.now();
+          updateUI();
+        }
+      }, 1200);
+    }
+  }
+
+  btnAnswer.addEventListener('click', ()=>{
+    if(!call || call.state !== 'ringing') return;
+    call.state = 'active';
+    call.start = Date.now();
+    updateUI();
+  });
+
+  btnHold.addEventListener('click', ()=>{
+    if(!call || call.state === 'ringing') return;
+    call.state = call.state === 'hold' ? 'active' : 'hold';
+    updateUI();
+  });
+
+  btnEnd.addEventListener('click', async ()=>{
+    if(!call) return;
+    const wasRinging = call.state === 'ringing';
+    const isIncomingMissed = wasRinging && call.direction === 'in';
+    const duration = wasRinging ? null : Math.floor((Date.now() - call.start)/1000);
+    const endedCall = {
+      number: call.number,
+      type: isIncomingMissed ? 'missed' : call.direction,
+      time: Date.now(),
+      duration
+    };
+    clearInterval(timerInt);
+    call = null;
+    updateUI();
+    await pushLog(endedCall);
+  });
+
+  el('btnSimulate').addEventListener('click', ()=>{
+    if(call) return;
+    startCall(randomNumber(), 'in');
+  });
+
+  el('btnDial').addEventListener('click', ()=>{
+    if(call) return;
+    const input = el('dialInput');
+    let num = input.value.trim();
+    if(!num) return;
+    startCall(num, 'out');
+    input.value = '';
+  });
+
+  el('dialInput').addEventListener('keydown', (e)=>{
+    if(e.key === 'Enter') el('btnDial').click();
+  });
+
+  el('btnClear').addEventListener('click', async ()=>{
+    if(!sb) return;
+    if(!confirm('سيتم حذف كل سجلّ المكالمات من قاعدة البيانات نهائيًا. متابعة؟')) return;
+    const { error } = await sb.from('calls').delete().neq('id', 0);
+    if(error) console.error(error);
+    await loadLog();
+  });
+
+  updateUI();
+  loadLog();
+})();
+</script>
+</body>
+</html>
